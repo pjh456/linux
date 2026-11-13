@@ -787,6 +787,11 @@ properties:
           - const: hugsun,x99
           - const: rockchip,rk3399
 
+      - description: Industio Purple Pi OH
+        items:
+          - const: industio,purple-pi-oh
+          - const: rockchip,rk3566
+
       - description: Indiedroid Nova SBC
         items:
           - const: indiedroid,nova
