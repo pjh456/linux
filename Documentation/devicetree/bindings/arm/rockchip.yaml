@@ -792,6 +792,11 @@ properties:
           - const: indiedroid,nova
           - const: rockchip,rk3588s
 
+      - description: Industio Purple Pi OH
+        items:
+          - const: industio,purple-pi-oh
+          - const: rockchip,rk3566
+
       - description: Khadas Edge series boards
         items:
           - enum:
