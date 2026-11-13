@@ -831,6 +831,8 @@ patternProperties:
     description: INCOstartec GmbH
   "^indiedroid,.*":
     description: Indiedroid
+  "^industio,.*":
+    description: Shenzhen Industio Technology Co., Ltd.
   "^inet-tek,.*":
     description: Shenzhen iNet Mobile Internet Technology Co., Ltd
   "^infineon,.*":
