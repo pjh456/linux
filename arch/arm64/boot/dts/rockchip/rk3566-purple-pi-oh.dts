@@ -564,6 +564,54 @@
 	};
 };
 
+&i2c3 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c3m0_xfer>;
+	clock-frequency = <400000>;
+
+	/*
+	 * HYM8563 RTC on the i2c3 m0 bus.  Its backup power comes from the
+	 * J4 coin cell; without a cell the time is not retained across power
+	 * cycles, but the chip itself still works.
+	 */
+	hym8563: rtc@51 {
+		compatible = "haoyu,hym8563";
+		reg = <0x51>;
+		#clock-cells = <0>;
+		clock-output-names = "hym8563-clkout";
+		/*
+		 * VDD_RTC is fed from VCC_3V3 through D107 when the board is
+		 * powered.  Referencing it also makes fw_devlink wait for the
+		 * PMIC regulators, so the i2c3 pull-ups (on VCCIO_ACODEC) are at
+		 * 3.3V instead of the PMIC's 600mV power-on default.
+		 */
+		vcc-supply = <&vcc_3v3>;
+	};
+
+	/*
+	 * MPU6500 G-sensor.  Schematic sheet 15: the INT net is on ball
+	 * 1B13 = GPIO1_B0 (not GPIO1_A7, which is I2S1_SDO0_M0 for the
+	 * codec).  Both VDD and VDDIO are VCC_3V3.
+	 *
+	 * U54 is marked "NC/MPU6500" in the schematic value field and does
+	 * not ACK at 0x68/0x69 on this unit, so keep it disabled.  Drop this
+	 * status line if a populated board is used; the pin mux and supplies
+	 * below are correct for the footprint.
+	 */
+	imu@68 {
+		compatible = "invensense,mpu6500";
+		reg = <0x68>;
+		status = "disabled";
+		interrupt-parent = <&gpio1>;
+		interrupts = <RK_PB0 IRQ_TYPE_EDGE_RISING>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&mpu6500_int_h>;
+		vdd-supply = <&vcc_3v3>;
+		vddio-supply = <&vcc_3v3>;
+	};
+};
+
 &i2c4 {
 	status = "okay";
 	pinctrl-names = "default";
@@ -698,6 +746,12 @@
 	lcd0 {
 		lcd0_rst_l: lcd0-rst-l {
 			rockchip,pins = <0 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	mpu6500 {
+		mpu6500_int_h: mpu6500-int-h {
+			rockchip,pins = <1 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
