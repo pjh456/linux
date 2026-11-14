@@ -18,6 +18,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/media/video-interfaces.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include <dt-bindings/soc/rockchip,vop2.h>
 #include "rk3566.dtsi"
@@ -114,6 +115,26 @@
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		vin-supply = <&vcc5v0_sys>;
+	};
+
+	/*
+	 * The MIPI CSI connector (J22) has three LDOs (2.8V, 1.8V, 1.5V),
+	 * all gated by the same Camera_EN signal (GPIO2_C6, active high).
+	 * Model them as one fixed supply: the OV5648 driver only enables and
+	 * disables the rails, it never changes their voltage, and a fixed
+	 * regulator must not advertise a voltage range.  Keep it off until
+	 * streaming; the sensor does not need power at probe time.
+	 */
+	vcc_cam: regulator-vcc-cam {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpios = <&gpio2 RK_PC6 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&camera_pwren_h>;
+		regulator-name = "vcc_cam";
+		regulator-min-microvolt = <2800000>;
+		regulator-max-microvolt = <2800000>;
+		vin-supply = <&vcc_3v3>;
 	};
 
 	vcc_wifi: regulator-vcc-wifi {
@@ -543,6 +564,82 @@
 	};
 };
 
+&i2c4 {
+	status = "okay";
+	pinctrl-names = "default";
+	/*
+	 * The camera connector uses I2C4 m1 (GPIO2_B1/B2), not the m0 pins
+	 * that the SoC dtsi selects by default.
+	 */
+	pinctrl-0 = <&i2c4m1_xfer>;
+	clock-frequency = <400000>;
+
+	/*
+	 * OV5648 on the 24-pin MIPI CSI FPC connector (J22).
+	 * XVCLK comes from CAM_CLKOUT0 (GPIO4_A7) at 24MHz, 2 data lanes.
+	 */
+	ov5648: camera@36 {
+		compatible = "ovti,ov5648";
+		reg = <0x36>;
+		clocks = <&cru CLK_CAM0_OUT>;
+		assigned-clocks = <&cru CLK_CAM0_OUT>;
+		assigned-clock-rates = <24000000>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&cam_clkout0 &camera_pwdn_l &camera_rst_l>;
+		reset-gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_LOW>;
+		powerdown-gpios = <&gpio3 RK_PB0 GPIO_ACTIVE_LOW>;
+		avdd-supply = <&vcc_cam>;
+		dvdd-supply = <&vcc_cam>;
+		dovdd-supply = <&vcc_cam>;
+
+		port {
+			ov5648_out: endpoint {
+				data-lanes = <1 2>;
+				link-frequencies = /bits/ 64 <210000000 168000000>;
+				remote-endpoint = <&csi_in>;
+			};
+		};
+	};
+};
+
+&csi_dphy {
+	status = "okay";
+};
+
+&csi {
+	status = "okay";
+
+	ports {
+		port@0 {
+			csi_in: endpoint {
+				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2>;
+				remote-endpoint = <&ov5648_out>;
+			};
+		};
+
+		port@1 {
+			csi_out: endpoint {
+				remote-endpoint = <&vicap_mipi_input>;
+			};
+		};
+	};
+};
+
+&vicap {
+	status = "okay";
+};
+
+&vicap_mipi {
+	vicap_mipi_input: endpoint {
+		remote-endpoint = <&csi_out>;
+	};
+};
+
+&vicap_mmu {
+	status = "okay";
+};
+
 &i2s1_8ch {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2s1m0_sclktx &i2s1m0_lrcktx &i2s1m0_sdi0 &i2s1m0_sdo0>;
@@ -569,6 +666,20 @@
 
 		bt_host_wake_h: bt-host-wake-h {
 			rockchip,pins = <2 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	camera {
+		camera_pwren_h: camera-pwren-h {
+			rockchip,pins = <2 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		camera_pwdn_l: camera-pwdn-l {
+			rockchip,pins = <3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		camera_rst_l: camera-rst-l {
+			rockchip,pins = <3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
