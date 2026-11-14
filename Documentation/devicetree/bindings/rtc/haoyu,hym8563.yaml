@@ -29,6 +29,9 @@ properties:
   wakeup-source:
     description: Enables wake up of host system on alarm.
 
+  vdd-supply:
+    description: Main power supply (VDD).
+
 allOf:
   - $ref: rtc.yaml
 
