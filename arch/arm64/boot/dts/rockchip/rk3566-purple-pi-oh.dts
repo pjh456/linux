@@ -16,6 +16,7 @@
 /dts-v1/;
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/linux-event-codes.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/media/video-interfaces.h>
@@ -37,6 +38,32 @@
 
 	chosen {
 		stdout-path = "serial2:1500000n8";
+	};
+
+	/*
+	 * SARADC_VIN0_KEY / RECOVERY (SW1).  The vendor DT uses a resistor
+	 * ladder; on this board the key pulls the channel to ground through
+	 * R313 (100R).  Unpressed the channel sits at the 1.8V reference
+	 * (raw 1023), so keep the key-up threshold just below full scale.
+	 */
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1700000>;
+		poll-interval = <100>;
+
+		button-recovery {
+			label = "recovery";
+			/*
+			 * Do not use KEY_RESTART here: systemd-logind treats it as
+			 * the reboot key (HandleRebootKey=reboot) and reboots the
+			 * board as soon as the button is pressed.  KEY_PROG1 only
+			 * generates an input event.
+			 */
+			linux,code = <KEY_PROG1>;
+			press-threshold-microvolt = <100000>;
+		};
 	};
 
 	hdmi-con {
