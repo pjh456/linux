@@ -251,7 +251,45 @@ static void rk8xx_i2c_shutdown(struct i2c_client *client)
 	rk8xx_shutdown(&client->dev);
 }
 
-static DEFINE_SIMPLE_DEV_PM_OPS(rk8xx_i2c_pm_ops, rk8xx_suspend, rk8xx_resume);
+/*
+ * The RK8xx interrupt line is the only wake-up path the PMIC has (RTC alarm,
+ * power key, ...).  Its per-source interrupts are regmap-irq virtual IRQs, so
+ * the enable_irq_wake() calls made by those child drivers never reach the real
+ * interrupt that drives PMIC_INT.  Mark the PMIC interrupt itself here so that
+ * suspend_device_irqs() leaves it enabled and the SoC can be woken.
+ */
+static int rk8xx_i2c_suspend(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+
+	if (client->irq > 0 && device_may_wakeup(dev))
+		dev_info(dev, "suspend: enable_irq_wake(%d) = %d\n",
+			 client->irq, enable_irq_wake(client->irq));
+	else
+		dev_info(dev, "suspend: wakeup not used (irq %d, may_wakeup %d)\n",
+			 client->irq, device_may_wakeup(dev));
+
+	return rk8xx_suspend(dev);
+}
+
+static int rk8xx_i2c_resume(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	int ret;
+
+	ret = rk8xx_resume(dev);
+	if (client->irq > 0 && device_may_wakeup(dev)) {
+		int err = disable_irq_wake(client->irq);
+
+		dev_info(dev, "resume: disable_irq_wake(%d) = %d\n",
+			 client->irq, err);
+	}
+
+	return ret;
+}
+
+static DEFINE_SIMPLE_DEV_PM_OPS(rk8xx_i2c_pm_ops, rk8xx_i2c_suspend,
+				rk8xx_i2c_resume);
 
 static const struct of_device_id rk8xx_i2c_of_match[] = {
 	{ .compatible = "rockchip,rk801", .data = &rk801_data },
