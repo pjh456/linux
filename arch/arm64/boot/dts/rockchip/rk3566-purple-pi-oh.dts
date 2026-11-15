@@ -564,6 +564,17 @@
 	};
 };
 
+/*
+ * 40-pin header J1 pins 3 (SDA) and 5 (SCL).  These are I2C2 m1 on
+ * GPIO4_B4/B5, not the m0 pins used by some other RK3566 boards.
+ * Leave the bus frequency at the 100 kHz default for long jumper wires.
+ */
+&i2c2 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2m1_xfer>;
+};
+
 &i2c3 {
 	status = "okay";
 	pinctrl-names = "default";
@@ -804,7 +815,108 @@
 	};
 };
 
+/*
+ * GPIO line names from the schematic.  These are labels only: they do not
+ * change pin muxing, they just make gpioinfo/gpioget usable.
+ *
+ * Naming rules:
+ *   - "J1-<pin>..." for every GPIO routed to the 2x20 header (J1), so the
+ *     physical pin number is obvious.
+ *   - descriptive net names for board-level control signals and buses.
+ *   - "" for pins that are not connected on this board.
+ *
+ * Header voltage domains (see the PMUIO2 comment below):
+ *   J1 pins using GPIO0: PMUIO2 = 3.3V
+ *   J1 pins using GPIO3_D: VCCIO6 = 3.3V
+ *   J1 pins using GPIO4_A/B/C: VCCIO6/VCCIO7 = 3.3V
+ */
+&gpio0 {
+	gpio-line-names =
+		/* GPIO0 A0-A7 */
+		"", "TSADC_SHUT_M0", "PMIC_SLEEP", "PMIC_INT",
+		"SD_CARD_DETECT", "USB_OTG_PWREN", "", "FLASH_VOL_SEL",
+		/* GPIO0 B0-B7 */
+		"LED_WORKING", "PMIC_I2C_SCL", "PMIC_I2C_SDA", "TOUCH_I2C_SCL",
+		"TOUCH_I2C_SDA", "TOUCH_INT", "TOUCH_RST", "J1-11_GPIO0_B7",
+		/* GPIO0 C0-C7 */
+		"J1-10_UART0_RX", "J1-8_UART0_TX", "", "BACKLIGHT_PWM",
+		"J1-13_GPIO0_C4", "J1-15_GPIO0_C5", "J1-12_GPIO0_C6", "J1-7_GPIO0_C7",
+		/* GPIO0 D0-D7 */
+		"UART2_RX_DEBUG", "UART2_TX_DEBUG", "", "",
+		"", "", "DSI_TX0_RST", "";
+};
+
+&gpio1 {
+	gpio-line-names =
+		/* GPIO1 A0-A7 */
+		"RTC_I2C_SDA", "RTC_I2C_SCL", "I2S1_MCLK_PMIC", "I2S1_SCLK_TX_PMIC",
+		"ETH_PHY_RESET", "I2S1_LRCK_TX_PMIC", "PDM_CLK_PMIC", "I2S1_SDO0_PMIC",
+		/* GPIO1 B0-B7 */
+		"IMU_INT", "USB_HOST2_PWREN", "USB_HOST3_PWREN", "I2S1_SDI0_PMIC",
+		"EMMC_D0", "EMMC_D1", "EMMC_D2", "EMMC_D3",
+		/* GPIO1 C0-C7 */
+		"EMMC_D4", "EMMC_D5", "EMMC_D6", "EMMC_D7",
+		"EMMC_CMD", "EMMC_CLK", "EMMC_DATA_STROBE", "EMMC_RST",
+		/* GPIO1 D0-D7 */
+		"", "", "", "",
+		"", "SD_D0", "SD_D1", "SD_D2";
+};
+
+&gpio2 {
+	gpio-line-names =
+		/* GPIO2 A0-A7 */
+		"SD_D3", "SD_CMD", "SD_CLK", "WIFI_SDIO_D0",
+		"WIFI_SDIO_D1", "WIFI_SDIO_D2", "WIFI_SDIO_D3", "WIFI_SDIO_CMD",
+		/* GPIO2 B0-B7 */
+		"WIFI_SDIO_CLK", "CAMERA_I2C_SDA", "CAMERA_I2C_SCL", "BT_UART_RX",
+		"BT_UART_TX", "BT_UART_RTS", "BT_UART_CTS", "BT_REG_ON",
+		/* GPIO2 C0-C7 */
+		"BT_WAKE_HOST", "BT_HOST_WAKE", "BT_PCM_SCLK", "BT_PCM_LRCK",
+		"BT_PCM_SDO", "BT_PCM_SDI", "CAMERA_EN", "",
+		/* GPIO2 D0-D7: not routed on this board */
+		"", "", "", "", "", "", "", "";
+};
+
+&gpio3 {
+	gpio-line-names =
+		/* GPIO3 A0-A7 */
+		"", "", "GMAC1_TXD2", "GMAC1_TXD3",
+		"GMAC1_RXD2", "GMAC1_RXD3", "GMAC1_TXCLK", "GMAC1_RXCLK",
+		/* GPIO3 B0-B7 */
+		"CAMERA_PWDN", "GMAC1_RXD0", "GMAC1_RXD1", "GMAC1_RXDV",
+		"ETH_PHY_INT", "GMAC1_TXD0", "GMAC1_TXD1", "GMAC1_TXEN",
+		/* GPIO3 C0-C7 */
+		"GMAC1_MCLKINOUT", "CAMERA_RESET", "WIFI_REG_ON", "WIFI_WAKE_HOST",
+		"GMAC1_MDC", "GMAC1_MDIO", "WIFI_PWREN", "",
+		/* GPIO3 D0-D7 */
+		"J1-32_GPIO3_D0", "J1-31_GPIO3_D1", "J1-33_GPIO3_D2", "J1-36_GPIO3_D3",
+		"J1-16_GPIO3_D4", "J1-18_GPIO3_D5", "J1-38_GPIO3_D6", "J1-35_GPIO3_D7";
+};
+
+&gpio4 {
+	gpio-line-names =
+		/* GPIO4 A0-A7 */
+		"", "", "J1-22_GPIO4_A2", "J1-40_GPIO4_A3",
+		"J1-29_GPIO4_A4", "J1-37_GPIO4_A5", "", "CAMERA_MCLK",
+		/* GPIO4 B0-B7 */
+		"", "", "J1-27_GPIO4_B2", "J1-28_GPIO4_B3",
+		"J1-3_I2C2_SDA", "J1-5_I2C2_SCL", "", "",
+		/* GPIO4 C0-C7 */
+		"USB_HOST1_PWREN", "HEADPHONE_DETECT", "J1-23_SPI3_CLK",
+		"J1-19_SPI3_MOSI", "J1-26_SPI_CS1",
+		"J1-21_SPI3_MISO", "J1-24_SPI3_CS0",
+		"HDMI_I2C_SCL",
+		/* GPIO4 D0-D7 */
+		"HDMI_I2C_SDA", "HDMI_CEC", "", "",
+		"", "", "", "";
+};
+
 &pmu_io_domains {
+	/*
+	 * The schematic ties PMUIO2 (GPIO0 B/C bank) to VCC3V3_PMU, and the
+	 * vendor DTB says the same.  Keep it at 3.3V so the 40-pin header
+	 * pins 7/8/10/11/12/13/15 and the panel reset really are 3.3V.
+	 */
 	pmuio1-supply = <&vcc3v3_pmu>;
 	pmuio2-supply = <&vcc3v3_pmu>;
 	vccio1-supply = <&vccio_acodec>;
@@ -890,6 +1002,17 @@
 &tsadc {
 	rockchip,hw-tshut-mode = <1>;
 	rockchip,hw-tshut-polarity = <0>;
+	status = "okay";
+};
+
+/*
+ * 40-pin header J1 pins 8 (TX) and 10 (RX).  This is UART0 on
+ * GPIO0_C1/C0; it is *not* the UART2 debug console (GPIO0_D0/D1).
+ * Exposing it gives the header a usable serial port.
+ */
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_xfer>;
 	status = "okay";
 };
 
