@@ -66,6 +66,26 @@
 		};
 	};
 
+	/*
+	 * Headphone jack detect (HP_DET, GPIO4_C1).  The jack switch is
+	 * closed to ground when the socket is empty and opens when a plug
+	 * is inserted, so the line floats high via the SoC pull-up while
+	 * headphones are plugged in (measured on the board).
+	 */
+	hp-det {
+		compatible = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&hp_det_h>;
+
+		headphone-switch {
+			label = "headphone";
+			gpios = <&gpio4 RK_PC1 GPIO_ACTIVE_HIGH>;
+			linux,input-type = <EV_SW>;
+			linux,code = <SW_HEADPHONE_INSERT>;
+			debounce-interval = <100>;
+		};
+	};
+
 	hdmi-con {
 		compatible = "hdmi-connector";
 		type = "a";
@@ -772,6 +792,12 @@
 	gmac1 {
 		gmac1_rstn: gmac1-rstn {
 			rockchip,pins = <1 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	headphone {
+		hp_det_h: hp-det-h {
+			rockchip,pins = <4 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
 
